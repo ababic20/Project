@@ -1,5 +1,5 @@
 import axios from "axios";
-const API_URL = "http://127.0.0.1:9000";
+const API_URL = "https://project-kj3g.onrender.com";
 
 export const getTasks = async (week, category) => {
   const res = await axios.get(`${API_URL}/tasks`, {

@@ -17,15 +17,16 @@ app = FastAPI(title="Task Manager (Kanban + Week View)", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # Vite
+        "http://localhost:5173",  
         "http://127.0.0.1:5173",
-        "http://localhost:3000",  # CRA
-        "http://127.0.0.1:3000",
+        "https://project-kj3g.onrender.com",  
+        "https://frontend-myxf.onrender.com",  
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Dependency za DB session
 def get_db():
