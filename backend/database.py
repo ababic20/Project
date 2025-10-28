@@ -2,7 +2,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 
-DB_URL = os.getenv("DATABASE_URL", "sqlite:///./tasks.db")
+DB_PATH = "./data/tasks.db"
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
+DB_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
+
 
 connect_args = {"check_same_thread": False} if DB_URL.startswith("sqlite") else {}
 
