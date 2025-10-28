@@ -1,0 +1,36 @@
+:root {
+  --bg-main: #1e1e1e;
+  --bg-column: #2c2c2c;
+  --bg-card: #333;
+  --text-main: #ffffff;
+
+  --color-new: #4caf50;
+  --color-active: #1e90ff;
+  --color-testing: #ff9800;
+  --color-done: #8bc34a;
+
+  --drag-shadow: rgba(0, 0, 0, 0.45);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: "Segoe UI", sans-serif;
+  overflow-x: hidden;
+}
+
+.column-hover {
+  border-color: var(--color-active) !important;
+  background: #3a3a3a !important;
+  transition: 0.2s ease;
+}
+
+button {
+  transition: 0.15s ease-in-out;
+}
+
+button:hover {
+  opacity: 0.85;
+}
