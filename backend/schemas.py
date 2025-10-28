@@ -1,6 +1,7 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List, Dict, Any
 import datetime
+
 
 class HistoryEntry(BaseModel):
     timestamp: str
@@ -12,18 +13,22 @@ class HistoryEntry(BaseModel):
     new_category: Optional[str] = None
     note: Optional[str] = None
 
+
 class TaskBase(BaseModel):
+    title: Optional[str]
+    description: Optional[str] = None
+    status: Optional[str] = None
+    week: Optional[int] = None
+    category: Optional[str] = None
+
+
+class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = None
     status: str = "new"
-    week: Optional[int] = None
+    week: int
     category: str = "business"
-    week_start: Optional[datetime.date] = None
-    week_end: Optional[datetime.date] = None
-    history: List[Dict[str, Any]] = []
 
-class TaskCreate(TaskBase):
-    pass
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
@@ -32,9 +37,18 @@ class TaskUpdate(BaseModel):
     week: Optional[int] = None
     category: Optional[str] = None
 
-class TaskOut(TaskBase):
+
+class TaskOut(BaseModel):
     id: int
-    created_at: Optional[datetime.datetime] = None
-    updated_at: Optional[datetime.datetime] = None
+    title: str
+    description: Optional[str]
+    status: str
+    week: Optional[int]
+    category: str
+    week_start: Optional[datetime.date]
+    week_end: Optional[datetime.date]
+    history: List[Dict[str, Any]] = Field(default_factory=list)
+    created_at: Optional[datetime.datetime]
+    updated_at: Optional[datetime.datetime]
 
     model_config = ConfigDict(from_attributes=True)

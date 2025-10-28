@@ -3,10 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from database import SessionLocal, engine, Base
-from models import Task
-from schemas import TaskOut, TaskCreate, TaskUpdate
-import crud
+from backend.database import SessionLocal, engine, Base
+from backend.models import Task
+from backend.schemas import TaskOut, TaskCreate, TaskUpdate
+import backend.crud as crud
+
 
 # Kreiraj tablice ako ne postoje
 Base.metadata.create_all(bind=engine)
