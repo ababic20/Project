@@ -7,9 +7,12 @@ os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 DB_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
 
-# Render fix: Convert to psycopg driver
+# Normalize PostgreSQL URL for SQLAlchemy + psycopg
 if DB_URL.startswith("postgres://"):
-    DB_URL = DB_URL.replace("postgres://", "postgresql+psycopg://", 1)
+    DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
+
+if DB_URL.startswith("postgresql://") and "+psycopg" not in DB_URL:
+    DB_URL = DB_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
 connect_args = {"check_same_thread": False} if DB_URL.startswith("sqlite") else {}
 
