@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from typing import Optional
 import json
 
-from backend.models import Task
-from backend.schemas import TaskCreate, TaskUpdate
+from models import Task
+from schemas import TaskCreate, TaskUpdate
 
 
 def get_week_range(week_number: int):
