@@ -1,21 +1,31 @@
-from sqlalchemy import Column, Integer, String, DateTime, Date, func
-from database import Base
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-class Task(Base):
-    __tablename__ = "tasks"
+def _normalize_db_url(url: str) -> str:
+    # Render često daje "postgres://", a SQLAlchemy treba "postgresql+psycopg2://"
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+    return url
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    description = Column(String, nullable=True)
-    status = Column(String, nullable=False, default="new")
-    week = Column(Integer, nullable=True)
-    category = Column(String, nullable=False)
+DB_URL = os.getenv("DATABASE_URL", "sqlite:///./tasks.db")
+DB_URL = _normalize_db_url(DB_URL)
 
-    week_start = Column(Date, nullable=True)
-    week_end = Column(Date, nullable=True)
+# Ako je Postgres na Renderu, osiguraj SSL
+if DB_URL.startswith("postgresql"):
+    if "sslmode=" not in DB_URL:
+        DB_URL += ("&" if "?" in DB_URL else "?") + "sslmode=require"
 
-    history = Column(String, nullable=False, default="[]")
+# connect_args samo za sqlite
+connect_args = {"check_same_thread": False} if DB_URL.startswith("sqlite") else {}
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(),
-                        onupdate=func.now(), nullable=False)
+engine = create_engine(
+    DB_URL,
+    future=True,
+    echo=False,
+    pool_pre_ping=True,   # automatski obnavlja "mrtve" konekcije
+    connect_args=connect_args,
+)
+
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
+Base = declarative_base()
