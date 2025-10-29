@@ -1,35 +1,44 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from database import SessionLocal, engine, Base
-from models import Task
-from schemas import TaskOut, TaskCreate, TaskUpdate
+from schemas import TaskOut, TaskCreate, TaskUpdate, UserCreate, UserLogin, Token
+from models import User
 import crud
+import os
 
-
-# Kreiraj tablice ako ne postoje
+# Create tables
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Task Manager (Kanban + Week View)", version="1.0.0")
+app = FastAPI(title="Kanban Board API", version="2.0")
 
-# CORS: dopusti lokalni frontend (prilagodi po potrebi)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  
+        "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://project-kj3g.onrender.com",  
-        "https://frontend-myxf.onrender.com",  
+        "https://project-kj3g.onrender.com",
+        "https://frontend-myxf.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# JWT config
+SECRET_KEY = os.getenv("SECRET_KEY", "tajni_kljuc")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-# Dependency za DB session
+
+# DB dependency
 def get_db():
     db = SessionLocal()
     try:
@@ -37,50 +46,98 @@ def get_db():
     finally:
         db.close()
 
-# ----------------- ROUTES -----------------
 
-@app.get("/health", tags=["meta"])
+# Token utils
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    user = crud.get_user_by_username(db, username=username)
+    if user is None:
+        raise credentials_exception
+    return user
+
+
+# ---------- ROUTES ----------
+@app.get("/health")
 def health():
     return {"status": "ok"}
 
-@app.get("/tasks", response_model=List[TaskOut], tags=["tasks"])
+
+@app.post("/register")
+def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    if crud.get_user_by_username(db, user.username):
+        raise HTTPException(status_code=400, detail="Username already taken")
+    crud.create_user(db, user)
+    return {"message": "User created successfully"}
+
+
+@app.post("/login", response_model=Token)
+def login(user: UserLogin, db: Session = Depends(get_db)):
+    db_user = crud.get_user_by_username(db, user.username)
+    if not db_user or not crud.verify_password(user.password, db_user.password):
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+    token = create_access_token(data={"sub": db_user.username})
+    return {"access_token": token, "token_type": "bearer"}
+
+
+@app.get("/tasks", response_model=List[TaskOut])
 def list_tasks(
     week: Optional[int] = None,
     category: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return crud.get_tasks(db, week=week, category=category)
+    return crud.get_tasks(db, user_id=current_user.id, week=week, category=category)
 
 
-@app.get("/tasks/{task_id}", response_model=TaskOut, tags=["tasks"])
-def get_task(task_id: int, db: Session = Depends(get_db)):
-    task = crud.get_task(db, task_id)
+@app.post("/tasks", response_model=TaskOut)
+def create_task(
+    payload: TaskCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return crud.create_task(db, payload, user_id=current_user.id)
+
+
+@app.put("/tasks/{task_id}", response_model=TaskOut)
+def update_task(
+    task_id: int,
+    payload: TaskUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    task = crud.get_task(db, task_id, user_id=current_user.id)
     if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    return task
-
-@app.post("/tasks", response_model=TaskOut, status_code=status.HTTP_201_CREATED, tags=["tasks"])
-def create_task(payload: TaskCreate, db: Session = Depends(get_db)):
-    return crud.create_task(db, payload)
-
-@app.put("/tasks/{task_id}", response_model=TaskOut, tags=["tasks"])
-def update_task(task_id: int, payload: TaskUpdate, db: Session = Depends(get_db)):
-    task = crud.get_task(db, task_id)
-    if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+        raise HTTPException(status_code=404, detail="Task not found")
     return crud.update_task(db, task, payload)
 
-@app.post("/tasks/{task_id}/move", response_model=TaskOut, tags=["tasks"])
-def move_task(task_id: int, new_week: Optional[int] = None, new_status: Optional[str] = None, db: Session = Depends(get_db)):
-    task = crud.get_task(db, task_id)
-    if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    return crud.move_task(db, task, new_week=new_week, new_status=new_status)
 
-@app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["tasks"])
-def delete_task(task_id: int, db: Session = Depends(get_db)):
-    task = crud.get_task(db, task_id)
+@app.delete("/tasks/{task_id}", status_code=204)
+def delete_task(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    task = crud.get_task(db, task_id, user_id=current_user.id)
     if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+        raise HTTPException(status_code=404, detail="Task not found")
     crud.delete_task(db, task)
     return None

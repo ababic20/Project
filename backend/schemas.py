@@ -3,6 +3,24 @@ from typing import Optional, List, Dict, Any
 import datetime
 
 
+# ----- USER -----
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ----- TASK -----
 class HistoryEntry(BaseModel):
     timestamp: str
     old_status: Optional[str] = None
@@ -22,20 +40,13 @@ class TaskBase(BaseModel):
     category: Optional[str] = None
 
 
-class TaskCreate(BaseModel):
+class TaskCreate(TaskBase):
     title: str
-    description: Optional[str] = None
-    status: str = "new"
     week: int
-    category: str = "business"
 
 
-class TaskUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    status: Optional[str] = None
-    week: Optional[int] = None
-    category: Optional[str] = None
+class TaskUpdate(TaskBase):
+    pass
 
 
 class TaskOut(BaseModel):
@@ -52,3 +63,9 @@ class TaskOut(BaseModel):
     updated_at: Optional[datetime.datetime]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# ----- TOKEN -----
+class Token(BaseModel):
+    access_token: str
+    token_type: str

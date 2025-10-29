@@ -14,7 +14,7 @@ function getWeekRange(weekNumber) {
 
   return {
     start: start.toLocaleDateString("hr-HR"),
-    end: end.toLocaleDateString("hr-HR")
+    end: end.toLocaleDateString("hr-HR"),
   };
 }
 
@@ -28,10 +28,15 @@ function getCurrentWeekNumber() {
 function KanbanBoard({ category }) {
   const [tasks, setTasks] = useState([]);
   const [week, setWeek] = useState(getCurrentWeekNumber());
+  const token = localStorage.getItem("token");
 
   const fetchTasks = async () => {
-    const data = await getTasks(week, category);
-    setTasks(data || []);
+    try {
+      const data = await getTasks(week, category, token);
+      setTasks(data || []);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+    }
   };
 
   useEffect(() => {
@@ -44,22 +49,14 @@ function KanbanBoard({ category }) {
     if (!over) return;
     const parts = active.id.split("-");
     const taskId = Number(parts.pop());
-
     const newStatus = over.id.split("-")[1];
 
-    await updateTask(taskId, {
-      status: newStatus,
-      category
-    });
-
+    await updateTask(taskId, { status: newStatus, category }, token);
     fetchTasks();
   };
 
   const handleMoveWeek = async (task) => {
-    await updateTask(task.id, {
-      week: week + 1,
-      category
-    });
+    await updateTask(task.id, { week: week + 1, category }, token);
     fetchTasks();
   };
 
@@ -73,13 +70,12 @@ function KanbanBoard({ category }) {
         {category === "business" ? "Business Tasks" : "Personal Tasks"}
       </h2>
 
-      {/* ✅ Week navigation + date range */}
       <div style={{ textAlign: "center", marginBottom: "20px" }}>
-        <button onClick={() => setWeek(w => Math.max(1, w - 1))}>⬅ Prev</button>
+        <button onClick={() => setWeek((w) => Math.max(1, w - 1))}>⬅ Prev</button>
         <span style={{ margin: "0 20px", fontWeight: "bold" }}>
           Week {week} ({start} – {end})
         </span>
-        <button onClick={() => setWeek(w => w + 1)}>Next ➡</button>
+        <button onClick={() => setWeek((w) => w + 1)}>Next ➡</button>
       </div>
 
       <TaskForm onTaskAdded={fetchTasks} defaultWeek={week} category={category} />
