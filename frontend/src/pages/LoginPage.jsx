@@ -12,7 +12,7 @@ function Login() {
     setError("");
 
     try {
-      const response = await fetch("http://127.0.0.1:9000/login", {
+      const response = await fetch("https://project-kj3g.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
