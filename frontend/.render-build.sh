@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
-# Build Vite project
+set -e
+
+echo "⚙️ Installing dependencies..."
 npm install
+
+echo "🏗️ Building project..."
 npm run build
 
-# Ensure _redirects file exists in the dist folder (for React Router SPA)
+echo "🔁 Creating _redirects for SPA routing..."
 echo "/* /index.html 200" > dist/_redirects
+
+echo "✅ Build complete!"
