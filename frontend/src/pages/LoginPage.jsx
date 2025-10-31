@@ -11,28 +11,39 @@ function Login({ onLogin }) {
     e.preventDefault();
     setError("");
 
-    try { //http://127.0.0.1:9000/login
-      const response = await fetch("https://frontend-myxf.onrender.com/login", {
+    try {
+      // ✅ pravi backend URL
+      const response = await fetch("https://project-kj3g.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
 
+      // Ako backend vrati grešku
       if (!response.ok) {
+        const text = await response.text();
+        console.error("Login failed:", text);
         throw new Error("Invalid username or password");
       }
 
-      const data = await response.json();
-      //console.log("Login response:", data);
+      // Sigurno pokušaj parsirati JSON
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("Server did not return valid JSON");
+      }
 
-      // ako backend vraća "token" umjesto "access_token", promijeni ovo:
       const token = data.access_token || data.token;
+      if (!token) {
+        throw new Error("No token received from server");
+      }
+
       localStorage.setItem("token", token);
-
-      if (onLogin) onLogin(); // ažurira stanje u App.jsx
-
+      if (onLogin) onLogin();
       navigate("/kanban");
     } catch (err) {
+      console.error("Login error:", err);
       setError(err.message);
     }
   };
