@@ -12,8 +12,9 @@ from models import User
 import crud
 import os
 
-# Create tables
+Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI(title="Kanban Board API", version="2.0")
 app.add_middleware(
