@@ -2,23 +2,19 @@ from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List, Dict, Any
 import datetime
 
-
 # ----- USER -----
 class UserCreate(BaseModel):
     username: str
     password: str
 
-
 class UserLogin(BaseModel):
     username: str
     password: str
-
 
 class UserOut(BaseModel):
     id: int
     username: str
     model_config = ConfigDict(from_attributes=True)
-
 
 # ----- TASK -----
 class HistoryEntry(BaseModel):
@@ -31,27 +27,23 @@ class HistoryEntry(BaseModel):
     new_category: Optional[str] = None
     note: Optional[str] = None
 
-
 class TaskBase(BaseModel):
-    title: Optional[str]
-    description: Optional[str] = None
-    status: Optional[str] = None
-    week: Optional[int] = None
-    category: Optional[str] = None
-
-
-class TaskCreate(TaskBase):
-    title: str
-    week: int
-
-
-class TaskUpdate(TaskBase):
     title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
     week: Optional[int] = None
     category: Optional[str] = None
 
+class TaskCreate(TaskBase):
+    title: str
+    week: int
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    week: Optional[int] = None
+    category: Optional[str] = None
 
 class TaskOut(BaseModel):
     id: int
@@ -67,7 +59,6 @@ class TaskOut(BaseModel):
     updated_at: Optional[datetime.datetime]
 
     model_config = ConfigDict(from_attributes=True)
-
 
 # ----- TOKEN -----
 class Token(BaseModel):

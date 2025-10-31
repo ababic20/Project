@@ -14,24 +14,25 @@ import os
 
 Base.metadata.create_all(bind=engine)
 
-
 app = FastAPI(title="Kanban Board API", version="2.0")
+
+# ✅ točni CORS origini
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://frontend-myxf.onrender.com",
+        "http://localhost:5173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 
 # JWT config
 SECRET_KEY = os.getenv("SECRET_KEY", "tajni_kljuc")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
 
 # DB dependency
 def get_db():
@@ -41,14 +42,12 @@ def get_db():
     finally:
         db.close()
 
-
 # Token utils
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -69,12 +68,10 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
-
 # ---------- ROUTES ----------
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
 
 @app.post("/register")
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -83,7 +80,6 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     crud.create_user(db, user)
     return {"message": "User created successfully"}
 
-
 @app.post("/login", response_model=Token)
 def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_username(db, user.username)
@@ -91,7 +87,6 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Invalid credentials")
     token = create_access_token(data={"sub": db_user.username})
     return {"access_token": token, "token_type": "bearer"}
-
 
 @app.get("/tasks", response_model=List[TaskOut])
 def list_tasks(
@@ -102,7 +97,6 @@ def list_tasks(
 ):
     return crud.get_tasks(db, user_id=current_user.id, week=week, category=category)
 
-
 @app.post("/tasks", response_model=TaskOut)
 def create_task(
     payload: TaskCreate,
@@ -110,7 +104,6 @@ def create_task(
     current_user: User = Depends(get_current_user),
 ):
     return crud.create_task(db, payload, user_id=current_user.id)
-
 
 @app.put("/tasks/{task_id}", response_model=TaskOut)
 def update_task(
@@ -123,7 +116,6 @@ def update_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return crud.update_task(db, task, payload)
-
 
 @app.delete("/tasks/{task_id}", status_code=204)
 def delete_task(
