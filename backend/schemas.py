@@ -33,20 +33,28 @@ class HistoryEntry(BaseModel):
 
 
 class TaskBase(BaseModel):
-    title: Optional[str]
+    title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
     week: Optional[int] = None
     category: Optional[str] = None
 
 
-class TaskCreate(TaskBase):
+class TaskCreate(BaseModel):
     title: str
     week: int
+    description: Optional[str] = None
+    status: Optional[str] = "new"
+    category: Optional[str] = "business"
 
 
-class TaskUpdate(TaskBase):
-    pass
+# 🔹 Sve opcionalno — omogućuje djelomično ažuriranje taska (npr. samo status)
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    week: Optional[int] = None
+    category: Optional[str] = None
 
 
 class TaskOut(BaseModel):
