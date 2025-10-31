@@ -28,14 +28,17 @@ function getCurrentWeekNumber() {
 function KanbanBoard({ category }) {
   const [tasks, setTasks] = useState([]);
   const [week, setWeek] = useState(getCurrentWeekNumber());
-  const token = localStorage.getItem("token");
 
   const fetchTasks = async () => {
     try {
-      const data = await getTasks(week, category, token);
+      const data = await getTasks(week, category);
       setTasks(data || []);
     } catch (error) {
       console.error("Error fetching tasks:", error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }
     }
   };
 
@@ -51,12 +54,12 @@ function KanbanBoard({ category }) {
     const taskId = Number(parts.pop());
     const newStatus = over.id.split("-")[1];
 
-    await updateTask(taskId, { status: newStatus, category }, token);
+    await updateTask(taskId, { status: newStatus, category });
     fetchTasks();
   };
 
   const handleMoveWeek = async (task) => {
-    await updateTask(task.id, { week: week + 1, category }, token);
+    await updateTask(task.id, { week: week + 1, category });
     fetchTasks();
   };
 

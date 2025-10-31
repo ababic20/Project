@@ -141,3 +141,22 @@ def delete_task(
         raise HTTPException(status_code=404, detail="Task not found")
     crud.delete_task(db, task)
     return None
+
+@app.get("/users", response_model=List[dict])
+def list_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.username != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    users = db.query(User).all()
+    return [
+        {
+            "id": u.id,
+            "username": u.username,
+            "email": getattr(u, "email", None),
+            "created_at": getattr(u, "created_at", None),
+        }
+        for u in users
+    ]

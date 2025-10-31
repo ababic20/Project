@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Login() {
+function Login({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -11,7 +11,7 @@ function Login() {
     e.preventDefault();
     setError("");
 
-    try {
+    try { //http://127.0.0.1:9000/login
       const response = await fetch("https://project-kj3g.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -23,7 +23,13 @@ function Login() {
       }
 
       const data = await response.json();
-      localStorage.setItem("token", data.access_token);
+      //console.log("Login response:", data);
+
+      // ako backend vraća "token" umjesto "access_token", promijeni ovo:
+      const token = data.access_token || data.token;
+      localStorage.setItem("token", token);
+
+      if (onLogin) onLogin(); // ažurira stanje u App.jsx
 
       navigate("/kanban");
     } catch (err) {
@@ -79,8 +85,7 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     height: "100vh",
-    background:
-      "linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #90caf9 100%)",
+    background: "linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #90caf9 100%)",
   },
   card: {
     backgroundColor: "white",
