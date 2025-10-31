@@ -46,7 +46,11 @@ class TaskCreate(TaskBase):
 
 
 class TaskUpdate(TaskBase):
-    pass
+    title: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    week: Optional[int] = None
+    category: Optional[str] = None
 
 
 class TaskOut(BaseModel):
