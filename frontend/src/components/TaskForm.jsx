@@ -10,11 +10,11 @@ function TaskForm({ onTaskAdded, defaultWeek, category }) {
     if (!title.trim()) return;
 
     await createTask({
-      title: title.trim(),
-      description: description.trim() || null,
+      title,
+      description,
       status: "new",
-      week: Number(defaultWeek),          // ✅ osiguraj broj
-      category: category || "business",   // ✅ fallback
+      week: defaultWeek,
+      category
     });
 
     setTitle("");
@@ -36,7 +36,7 @@ function TaskForm({ onTaskAdded, defaultWeek, category }) {
           borderRadius: "6px",
           border: "1px solid #333",
           background: "#111",
-          color: "#fff",
+          color: "#fff"
         }}
         required
       />
@@ -52,7 +52,7 @@ function TaskForm({ onTaskAdded, defaultWeek, category }) {
           borderRadius: "6px",
           border: "1px solid #333",
           background: "#111",
-          color: "#fff",
+          color: "#fff"
         }}
       />
       <button
@@ -64,7 +64,7 @@ function TaskForm({ onTaskAdded, defaultWeek, category }) {
           backgroundColor: "#4caf50",
           border: "none",
           color: "#fff",
-          fontWeight: "bold",
+          fontWeight: "bold"
         }}
       >
         Add
